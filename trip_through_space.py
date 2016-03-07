@@ -34,7 +34,6 @@ class space_ship(object):
 		# 	self._accelerate(acceleration[0], acceleration[1])
 		self.v = math.sqrt(self.vx**2+self.vy**2)
 		if self.v != 0:
-			print self.vx/self.v
 			if self.vy >=0:
 				self.angle = math.acos(self.vx/self.v)
 			else:
@@ -52,8 +51,8 @@ class space_ship(object):
 
 	def _turn(self, how_much):
 		if self.v > 0:
-			self.vx += -how_much * self.vy/self.v
-			self.vy += how_much * self.vx/self.v
+			self.vx += -how_much * abs(self.vy)
+			self.vy += how_much * abs(self.vx)
 		else:
 			self.angle += how_much
 		
@@ -62,11 +61,14 @@ class space_ship(object):
 	def _accelerate(self, force, force_angle):
 		""" Takes in a scalar force and its direction, updates vx and vy 
 		"""
-		if self.v + force >= 0:
-			self.vx += force*math.cos(force_angle)
-			self.vy += force*math.sin(force_angle)
+		if self.v < 20:
+			if self.v + force >= 0:
+				self.vx += force*math.cos(force_angle)
+				self.vy += force*math.sin(force_angle)
+			else:
+				self.vx, self.vy = 0, 0
 		else:
-			self.vx, self.vy = 0, 0
+			print "hi"
 
 
 class star(object):
@@ -115,15 +117,19 @@ class View(object):
 		self.screen = pygame.display.set_mode(screen_size)
 		self.background = pygame.Surface(world_size)
 		self.background.fill(pygame.Color('black'))
-		self.screen.blit(self.background, (0,0))
+		star_positions = [(random.randint(0, self.background.get_width()), random.randint(0, self.background.get_height())) for i in range(random.randint(10, 20))]
+		for x, y in star_positions:															#put background stars on background
+			pygame.draw.circle(self.background, (255, 255, 255), (x,y), 7, 0)
+		self.screen.blit(self.background, (-model.ship.x, -model.ship.y))
 		# point_list = 
 		pygame.draw.rect(self.screen, pygame.Color('red'), model.ship.rect)
 		pygame.display.update()
 		
 	def _update(self, model):
-		self.screen.blit(self.background, (0,0))
-		pygame.draw.rect(self.screen, pygame.Color('red'), model.ship.rect)
-		pygame.draw.line(self.screen, pygame.Color('white'), (model.ship.x, model.ship.y), (model.ship.x + 30*math.cos(model.ship.angle), model.ship.y + 30*math.sin(model.ship.angle)))
+		self.screen.blit(self.background, (-model.ship.x, -model.ship.y))
+		pygame.draw.line(self.screen, pygame.Color('white'), (model.ship.x, model.ship.y), (model.ship.x - 30*math.cos(model.ship.angle), model.ship.y - 30*math.sin(model.ship.angle)), 4)
+		pygame.draw.circle(self.screen, pygame.Color('red'), (int(model.ship.x), int(model.ship.y)), 20)
+		
 		pygame.display.update()
 
 

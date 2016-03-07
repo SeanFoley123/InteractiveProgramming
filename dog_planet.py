@@ -80,7 +80,7 @@ def main():
 		for key_pressed in key_list:
 			goofy._accelerate(movement[key_pressed])
 		screen.blit(background, (0, 0))
-		# pygame.draw.circle(background, (goofy.rect.centerx, ))
+		#pygame.draw.circle(background, (goofy.rect.centerx, goofy.rect.centery))
 		goofy._accelerate(force(goofy, new_star, screen))
 		allsprites.update()
 		allsprites.draw(screen)
