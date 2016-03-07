@@ -54,5 +54,6 @@ def main():
 			uss_greg.x += movement[key][0]
 			uss_greg.y += movement[key][1]
 		screen.blit(background, (uss_greg.x, uss_greg.y))
+		pygame.draw.circle(screen, pygame.Color('red'), (uss_greg.x, uss_greg.y), 10)
 		pygame.display.flip()
 if __name__ == '__main__': main()

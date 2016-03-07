@@ -23,7 +23,8 @@ class Dog(pygame.sprite.Sprite):
 		self.vx, self.vy = 0, 0
 		self.mass = 1000.0
 	def update(self):
-		print self.vx, self.vy
+		print self.rect.centerx, self.rect.centery
+		self.vx, self.vy = self.vx*.995, self.vy*.995
 		self.rect = self.rect.move((self.vx, self.vy))
 	def _move(self, (x, y)):
 		self.rect = self.rect.move((x, y))

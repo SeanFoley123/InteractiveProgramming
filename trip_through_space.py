@@ -52,10 +52,10 @@ class space_ship(object):
 
 	def _turn(self, how_much):
 		if self.v > 0:
-			self.vx += -how_much * self.vy/self.v
-			self.vy += how_much * self.vx/self.v
+			self.vx += -how_much * abs(self.vy)
+			self.vy += how_much * abs(self.vx)
 		else:
-			self.angle += how_much
+			self.angle += 2*how_much
 		
 		
 
@@ -106,7 +106,6 @@ class Controller(object):
 				model.ship.go -= speed
 			if event.type == KEYUP and event.key == pygame.K_DOWN:
 				model.ship.go += speed
-
 
 
 
