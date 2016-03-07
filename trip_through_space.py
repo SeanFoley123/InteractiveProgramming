@@ -4,7 +4,7 @@ from pygame.locals import *
 
 class Model(object):
 	def __init__(self):
-		self.ship = space_ship(200, 200, 50, 20, 100)
+		self.ship = space_ship(100, 300, 50, 20, 100)
 		self.stars_list = [star(500, 500, 500, 100, pygame.Color('white'))]
 
 	def force(self, space_ship, star):
@@ -30,10 +30,11 @@ class space_ship(object):
 		self.acceleration_list, self.turn, self.go = [], 0, 0
 
 	def _update(self):
-		for acceleration in self.acceleration_list:									#Each element is a tuple of force and direction
-			self._accelerate(acceleration[0], acceleration[1])
+		# for acceleration in self.acceleration_list:									#Each element is a tuple of force and direction
+		# 	self._accelerate(acceleration[0], acceleration[1])
 		self.v = math.sqrt(self.vx**2+self.vy**2)
 		if self.v != 0:
+			print self.vx/self.v
 			if self.vy >=0:
 				self.angle = math.acos(self.vx/self.v)
 			else:
@@ -43,19 +44,29 @@ class space_ship(object):
 		self._move()
 		self.rect.centerx, self.rect.centery = self.x, self.y
 		self.acceleration_list = []
+		
 
 	def _move(self):
 		self.x += self.vx
 		self.y += self.vy
 
 	def _turn(self, how_much):
-		self.angle += how_much
+		if self.v > 0:
+			self.vx += -how_much * self.vy/self.v
+			self.vy += how_much * self.vx/self.v
+		else:
+			self.angle += how_much
+		
+		
 
 	def _accelerate(self, force, force_angle):
 		""" Takes in a scalar force and its direction, updates vx and vy 
 		"""
-		self.vx += force*math.cos(force_angle)
-		self.vy += force*math.sin(force_angle)
+		if self.v + force >= 0:
+			self.vx += force*math.cos(force_angle)
+			self.vy += force*math.sin(force_angle)
+		else:
+			self.vx, self.vy = 0, 0
 
 
 class star(object):
@@ -68,11 +79,25 @@ class Controller(object):
 	def __init__(self):
 		pass
 	def _update(self, events, model):
-		speed = .5
+		speed = .1
+		angle_turn = (math.pi/2)/60
 		for event in events:
+
+		
 			if event.type == QUIT:
 				pygame.quit()
 				sys.exit()
+
+			if event.type == KEYDOWN and event.key == pygame.K_RIGHT:
+				model.ship.turn += angle_turn
+			if event.type == KEYUP and event.key == pygame.K_RIGHT:
+				model.ship.turn -= angle_turn
+			if event.type == KEYDOWN and event.key == pygame.K_LEFT:
+				model.ship.turn -= angle_turn
+			if event.type == KEYUP and event.key == pygame.K_LEFT:
+				model.ship.turn += angle_turn
+
+
 			if event.type == KEYDOWN and event.key == pygame.K_UP:
 				model.ship.go += speed
 			if event.type == KEYUP and event.key == pygame.K_UP:
@@ -81,6 +106,8 @@ class Controller(object):
 				model.ship.go -= speed
 			if event.type == KEYUP and event.key == pygame.K_DOWN:
 				model.ship.go += speed
+
+
 
 
 class View(object):
@@ -96,6 +123,7 @@ class View(object):
 	def _update(self, model):
 		self.screen.blit(self.background, (0,0))
 		pygame.draw.rect(self.screen, pygame.Color('red'), model.ship.rect)
+		pygame.draw.line(self.screen, pygame.Color('white'), (model.ship.x, model.ship.y), (model.ship.x + 30*math.cos(model.ship.angle), model.ship.y + 30*math.sin(model.ship.angle)))
 		pygame.display.update()
 
 
