@@ -51,8 +51,8 @@ class space_ship(object):
 
 	def _turn(self, how_much):
 		if self.v > 0:
-			self.vx += -how_much * abs(self.vy)
-			self.vy += how_much * abs(self.vx)
+			self.vx += -how_much * self.vy
+			self.vy += how_much * self.vx
 		else:
 			self.angle += how_much
 		
@@ -61,7 +61,7 @@ class space_ship(object):
 	def _accelerate(self, force, force_angle):
 		""" Takes in a scalar force and its direction, updates vx and vy 
 		"""
-		if self.v < 20:
+		if self.v < 5:
 			if self.v + force >= 0:
 				self.vx += force*math.cos(force_angle)
 				self.vy += force*math.sin(force_angle)
