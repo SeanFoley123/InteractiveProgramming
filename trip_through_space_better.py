@@ -112,6 +112,14 @@ class space_ship(object):
 		
 
 	def _move(self):
+		if self.x + self.vx + self.r >= 10000:
+			self.vx -= .75
+		if  self.x + self.vx - self.r <= 0:
+			self.vx += .75
+		if self.y + self.vy + self.r >= 10000:
+			self.vy -= .75
+		if  self.y + self.vy - self.r <= 0:
+			self.vy += .75
 		self.x += self.vx
 		self.y += self.vy
 
