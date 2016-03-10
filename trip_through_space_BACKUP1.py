@@ -4,36 +4,30 @@ from pygame.locals import *
 
 class Model(object):
 	def __init__(self, world_size, screen_size):
+		""" Populate a world of size world_size with all the stars and spaceships you want, and set initial variables.
+		"""
 		self.ship = space_ship(world_size[0]/2, world_size[1]/2, 20, 100)
-		star_positions = []
-		i = 0
-		while i < 10:
-			x = random.choice([random.randint(500, world_size[0]/2 - 5.0/8*screen_size[0]), random.randint(world_size[0]/2 + 5.0/8*screen_size[0], world_size[0]-500)])
-			y = random.choice([random.randint(500, world_size[1]/2 - 5.0/8*screen_size[1]), random.randint(world_size[1]/2 + 5.0/8*screen_size[1], world_size[1]-500)])
-			flag = False
-			for x1, y1 in star_positions:
-				if x1-500 < x < x1 + 500 or y1-500 < y < y1+500:
-					flag = True
-					break
-			if flag:
-				continue
-			else:
-				star_positions.append((x,y))
-				i+=1
-		radius = [random.randint(75, 240) for i in range(len(star_positions))]
-		self.stars_list = [Star(star_positions[i][0], star_positions[i][1], 3-6*random.random(), 3-6*random.random(), radius[i]*50, radius[i]) for i in range(len(star_positions))]
-		for star in self.stars_list:
-			print star
+
+		how_many = 15
+		radius = [random.randint(75, 240) for i in range(how_many)]
+		self.stars_list = [Star(random.choice([random.randint(500, world_size[0]/2 - 5.0/8*screen_size[0]), random.randint(world_size[0]/2 + 5.0/8*screen_size[0],
+		world_size[0]-500)]), random.choice([random.randint(500, world_size[1]/2 - 5.0/8*screen_size[1]), random.randint(world_size[1]/2 + 5.0/8*screen_size[1],
+		world_size[1]-500)]), 3-6*random.random(), 3-6*random.random(), radius[i]*50, radius[i]) for i in range(how_many)]
+
 		self.shrooms = False
-		self.dead = False
+		self.death = True						#Do you die if you hit stars?
+		self.dead = False						#Are you currently dead?
+		self.split_star_list = []
 
 	def force_stars(self, star, other_star):
+		"""Calculate the force between star and other_star, move star, and check if star and other_star collide and therefore need to be combined.
+		"""
 		dx, dy = other_star.x - star.x, other_star.y - star.y
 		distance = math.sqrt(dx**2 + dy**2)
 		if distance < star.r + other_star.r:
 			if star in self.new_star_list and other_star in self.new_star_list:
 				self.combine(star, other_star)
-		elif distance > 1000:
+		elif distance > 3000:
 			pass
 		else:
 			force = other_star.mass/(distance**2)
@@ -44,52 +38,94 @@ class Model(object):
 			star._accelerate(force, angle)
 
 	def _update(self):
+		"""Checks for gravity between each star and between the ship and each star, and calls the update function of each instance of star and ship.
+		"""
 		self.new_star_list = list(self.stars_list)
-		#check for split
-		#new_star_list has 5 stars - all at 0,0 w/ vx, vy = 0, 0
-		#for star in new_star_list
-		for star in self.stars_list:
+		for index, star in enumerate(self.stars_list):
 			for other_star in self.stars_list:
 				if not star is other_star:
 					self.force_stars(star, other_star)
-			star._update()
+			if star.r >= 500 and star in self.new_star_list:
+				print 'split'
+				self.new_star_list.remove(star)
+				x_pos = star.x
+				y_pos = star.y
+				self.split(star)
+
+				for index, new_star in enumerate(self.split_star_list):
+					theta = index*2*math.pi/len(self.split_star_list)
+					new_star.x = x_pos + .75*star.r * math.cos(theta)
+					new_star.y = y_pos + .75*star.r * math.sin(theta)
+					new_star.vx =  random.randint(14, 14) * math.cos(theta)
+					new_star.vy =  random.randint(14, 14) * math.sin(theta)
+					self.new_star_list.append(new_star)
+				self.split_star_list = []
 			if self.shrooms:
 				star.change_color()
+			star._update()
+		self.stars_list = self.new_star_list
 		for star in self.stars_list:
 			dx = star.x - self.ship.x
 			dy = star.y - self.ship.y
 			distance = math.sqrt(dx**2 + dy**2)
 			if distance <= star.r + self.ship.r/2:
-				self.dead = True
+				self.dead = self.death
 			if dy >= 0:
 				angle = math.acos(dx/distance)
 			else:
 				angle = 2*math.pi - math.acos(dx/distance)
 			self.ship._accelerate(star.mass/(distance/2)**2, angle)
 		self.ship._update()
-		self.stars_list = self.new_star_list
+		
 
 	def combine(self, star, other_star):
-		print 'combine'
-		self.new_star_list.remove(star)
-		self.new_star_list.remove(other_star)
+		"""Takes two stars, destroys them and adds a mixture to Model's new_star_list
+		"""
+		if star in self.new_star_list:
+			self.new_star_list.remove(star)
+		if other_star in self.new_star_list:
+			self.new_star_list.remove(other_star)
 		if star.mass == other_star.mass:
-			new_vx = random.choice(star.vx, other_star.vx)
-			new_vy = random.choice(star.vy, other_star.vy)
+			new_vx = random.choice([star.vx, other_star.vx])
+			new_vy = random.choice([star.vy, other_star.vy])
 		else:
 			new_vx = (star.vx*star.mass + other_star.vx*other_star.mass)/(star.mass + other_star.mass)
 			new_vy = (star.vy*star.mass + other_star.vy*other_star.mass)/(star.mass + other_star.mass)
 		if star > other_star:
 			biggest = star
+			smaller = other_star
 		elif star < other_star:
 			biggest = other_star
+			smaller = star
 		else:
-			biggest = random.choice([star, other_star])
-		new_star = Star((star.x + other_star.x)/2, (star.y + other_star.y)/2, new_vx, new_vy, int(.75*(star.mass + other_star.mass)), star.r + other_star.r)
+			biggest = star
+			smaller = other_star
+
+		new_star = Star((biggest.mass*biggest.x + smaller.x*smaller.mass)/(biggest.mass + smaller.mass), (biggest.mass*biggest.y + smaller.y*smaller.mass)/(biggest.mass + smaller.mass), new_vx, new_vy, (star.mass + other_star.mass), star.r + other_star.r)
 		self.new_star_list.append(new_star)
+
+	def split(self, star):
+		""" If star is of certain size, is called, removes star from list and creates new stars that are then added to list.
+		"""
+		max_r = 150
+		min_r = 50
+		if star.r < min_r:
+			pass
+		elif min_r <= star.r <= max_r:
+			self.split_star_list.append(star)
+		elif star.r > max_r:
+			new_star_r = random.randint(min_r, max_r)
+			new_star = Star(0, 0, 0, 0, new_star_r*100, new_star_r)
+			self.split_star_list.append(new_star)
+
+			remainder_star_r = star.r - new_star_r
+			remainder_star = Star(star.x, star.y, star.vx, star.vy, remainder_star_r*100, remainder_star_r)
+			self.split(remainder_star)
 
 
 class space_ship(object):
+	""" Represents position/velocity of user's spaceship.
+	"""
 	def __init__(self, x, y, r, mass, v = 4, angle = -math.pi/2):
 		self.rect = pygame.Rect(x-r/math.sqrt(2), y-r/math.sqrt(2), 2*r/math.sqrt(2), 2*r/math.sqrt(2))
 		self.mass, self.v, self.angle = mass, v, angle
@@ -99,8 +135,6 @@ class space_ship(object):
 		self.acceleration_list, self.turn, self.go = [], 0, 0
 
 	def _update(self):
-		# for acceleration in self.acceleration_list:									#Each element is a tuple of force and direction
-		# 	self._thrust(acceleration[0], acceleration[1])
 		self.v = math.sqrt(self.vx**2+self.vy**2)
 		if self.v != 0:
 			if self.vy >=0:
@@ -151,14 +185,25 @@ class space_ship(object):
 
 
 class Star(object):
+	"""Represents position/velocity/other attributes of star.
+	"""
 	def __init__(self, x, y, vx, vy, mass, r):
 		color_letters = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'A', 'B', 'C', 'D', 'E', 'F']
 		self.color = pygame.Color('#{}{}{}{}{}{}'.format(random.choice(color_letters), random.choice(color_letters), random.choice(color_letters), random.choice(color_letters), random.choice(color_letters), random.choice(color_letters)))
 		self.x, self.y, self.mass, self.r = x, y, mass, r
 		self.rect = pygame.Rect(x-r/math.sqrt(2), y-r/math.sqrt(2), 2*r/math.sqrt(2), 2*r/math.sqrt(2))
 		self.vx, self.vy = vx, vy
+		self.v = math.sqrt(self.vx**2 + self.vy**2)
 
 	def _update(self):
+		self.v = math.sqrt(self.vx**2 + self.vy**2) 
+		if  self.v > 3*math.sqrt(2):
+			if self.vy >=0:
+				theta = math.acos(self.vx/self.v)
+			else:
+				theta = 2*math.pi - math.acos(self.vx/self.v)
+			self.vx -= .05*math.cos(theta)
+			self.vy -= .05*math.sin(theta)
 		self._move()
 		self.rect.centerx, self.rect.centery = self.x, self.y
 
@@ -179,13 +224,15 @@ class Star(object):
 		self.color = pygame.Color('#{}{}{}{}{}{}'.format(random.choice(color_letters), random.choice(color_letters), random.choice(color_letters), random.choice(color_letters), random.choice(color_letters), random.choice(color_letters)))
 
 	def __str__(self):
-		return '{} color star at {}, {}'.format(self.color, self.x, self.y)
+		return '{} mass star at {}, {}'.format(self.mass, self.x, self.y)
 
 	def __cmp__(self, other):
 		return self.r - other.r
 
 
 class Controller(object):
+	"""Takes action based on user input.
+	"""
 	def __init__(self):
 		pass
 	def _update(self, events, model):
@@ -206,7 +253,7 @@ class Controller(object):
 			if event.type == KEYUP and event.key == pygame.K_LEFT:
 				model.ship.turn += angle_turn
 			if event.type == KEYDOWN and event.key == pygame.K_CAPSLOCK:
-				if model.shrooms:
+				if model.shrooms:                        #SHROOMS!!!
 					model.shrooms = False
 				else:
 					model.shrooms = True
@@ -223,27 +270,22 @@ class Controller(object):
 
 
 class View(object):
+	"""Visual representation of model.
+	"""
 	def __init__(self, screen_size, world_size, model):
 		pygame.mouse.set_visible(False)
 		self.x, self.y = model.ship.x - screen_size[0]/2, model.ship.y - screen_size[1]/2
 		self.screen = pygame.display.set_mode(screen_size)
 		#make background
-		self.background = pygame.Surface((world_size[0]+screen_size[0], world_size[1] + screen_size[1]))
+		self.background = pygame.Surface((world_size[0], world_size[1]))
 		self.background.fill(pygame.Color('black'))
 		#put background stars on background
 		star_positions = [(random.randint(0, self.background.get_width()), random.randint(0, self.background.get_height())) for i in range(5000)]
 		for x, y in star_positions:															
 			pygame.draw.circle(self.background, (255, 255, 255), (x,y), random.choice(range(1, 8)), 0)
-		#Draw stars
-			# pygame.draw.rect(self.background, pygame.Color('red'), star.rect, 2)
-		# pygame.draw.line(self.background, pygame.Color('white'), (0, 0), (self.background.get_size()[0], 0), 2)
-		# pygame.draw.line(self.background, pygame.Color('white'), (0, 0), (0, self.background.get_size()[1]), 2)
-		# pygame.draw.line(self.background, pygame.Color('white'), (0, self.background.get_size()[1]-2), (self.background.get_size()[0]-2, self.background.get_size()[1]-2), 2)
-		# pygame.draw.line(self.background, pygame.Color('white'), (self.background.get_size()[0]-1, 0), (self.background.get_size()[0]-2, self.background.get_size()[1]-2), 2)
 
 		self.screen.blit(self.background, (-model.ship.x, -model.ship.y))
 
-		# point_list = 
 		pygame.draw.circle(self.screen, pygame.Color('red'), (self.screen.get_size()[0]/2, self.screen.get_size()[1]/2), model.ship.r)
 		for star in model.stars_list:
 			pygame.draw.circle(self.screen, star.color, (star.x, star.y), star.r)
@@ -254,7 +296,7 @@ class View(object):
 		self.screen.blit(self.background, (-self.x, -self.y))
 		pygame.draw.line(self.screen, pygame.Color('white'), (self.screen.get_width()/2, self.screen.get_height()/2), (self.screen.get_width()/2 - 30*math.cos(model.ship.angle), self.screen.get_height()/2 - 30*math.sin(model.ship.angle)), 4)
 		pygame.draw.circle(self.screen, pygame.Color('red'), (self.screen.get_width()/2, self.screen.get_height()/2), 20)
-		# pygame.draw.rect(self.screen, pygame.Color('red'), model.ship.rect, 1)
+
 		for star in model.stars_list:
 			pygame.draw.circle(self.screen, star.color, (int(star.x) - self.x, int(star.y) - self.y), star.r)
 
@@ -272,12 +314,14 @@ def main():
 	view = View(view_size, world_size, model)
 	running = True
 	i = 1
-	while running:
+	while running:              #update everything 60 times per second
 		clock.tick(60)
 		controller._update(pygame.event.get(), model)
 		model._update()
 		view._update(model)
 		if model.dead:
+			view.screen.fill(pygame.Color('red'))
+			pygame.display.update()
 			pygame.quit()
 			sys.exit()
 		i += 1

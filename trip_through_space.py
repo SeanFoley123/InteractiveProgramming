@@ -22,6 +22,7 @@ class Model(object):
 				i+=1
 		radius = [random.randint(75, 240) for i in range(len(star_positions))]
 		self.stars_list = [Star(star_positions[i][0], star_positions[i][1], 3-6*random.random(), 3-6*random.random(), radius[i]*50, radius[i]) for i in range(len(star_positions))]
+		self.split_star_list = []
 		for star in self.stars_list:
 			print star
 		self.shrooms = False
@@ -45,10 +46,28 @@ class Model(object):
 
 	def _update(self):
 		self.new_star_list = list(self.stars_list)
+<<<<<<< HEAD
 		#check for split
 		#new_star_list has 5 stars - all at 0,0 w/ vx, vy = 0, 0
 		#for star in new_star_list
+=======
+		
+>>>>>>> 3e847e07ddef97ac4b7c9f502a0579116a11c275
 		for star in self.stars_list:
+			if star.mass > 50000:
+				self.stars_list.remove(star)
+				x_pos = star.x
+				y_pos = star.y
+				self.split_star_list = []
+				self.split(star)
+
+				for new_star in self.split_star_list:
+					theta = self.split_star_list.index(new_star)*2*math.pi/len(self.split_star_list)
+					new_star.x = x_pos + 2 * new_star.r * math.cos(theta)
+					new_star.y = y_pos + 2 * new_star.r * math.sin(theta)
+					new_star.vx =  random.randit(0, 3) * math.cos(theta)
+					new_star.vy =  random.randint(0,3) * math.sin(theta)
+
 			for other_star in self.stars_list:
 				if not star is other_star:
 					self.force_stars(star, other_star)
@@ -68,9 +87,10 @@ class Model(object):
 			self.ship._accelerate(star.mass/(distance/2)**2, angle)
 		self.ship._update()
 		self.stars_list = self.new_star_list
+		self.stars_list.extend(self.split_star_list)
 
 	def combine(self, star, other_star):
-		print 'combine'
+		
 		self.new_star_list.remove(star)
 		self.new_star_list.remove(other_star)
 		if star.mass == other_star.mass:
@@ -87,6 +107,24 @@ class Model(object):
 			biggest = random.choice([star, other_star])
 		new_star = Star((star.x + other_star.x)/2, (star.y + other_star.y)/2, new_vx, new_vy, int(.75*(star.mass + other_star.mass)), star.r + other_star.r)
 		self.new_star_list.append(new_star)
+
+	def split(self, star):
+		print 'split'
+		max_m = 15000
+		min_m = 5000
+
+		if star.mass < min_m:
+			pass
+		elif min_m <= star.mass <= max_m:
+			self.split_star_list.append(star)
+		elif star.mass > max_m:
+			new_star_mass = random.randint(min_m, max_m)
+			new_star = Star(0, 0, 0, 0, new_star_mass, new_star_mass/100)
+			self.split_star_list.append(new_star)
+
+			remainder_star_mass = random.randint(min_m, max_m - new_star_mass)
+			remainder_star = Star(star.x, star.y, star.vx, star.vy, remainder_star_mass, remainder_star_mass/100)
+			split(remainder_star)
 
 
 class space_ship(object):

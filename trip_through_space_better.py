@@ -67,7 +67,7 @@ class Model(object):
 		self.stars_list = self.new_star_list
 
 	def combine(self, star, other_star):
-		print 'combine'
+		
 		self.new_star_list.remove(star)
 		self.new_star_list.remove(other_star)
 		if star.mass == other_star.mass:
@@ -84,6 +84,7 @@ class Model(object):
 			biggest = random.choice([star, other_star])
 		new_star = Star((star.x + other_star.x)/2, (star.y + other_star.y)/2, new_vx, new_vy, int(.75*(star.mass + other_star.mass)), star.r + other_star.r)
 		self.new_star_list.append(new_star)
+
 
 
 class space_ship(object):
