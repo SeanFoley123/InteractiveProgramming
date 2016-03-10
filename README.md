@@ -1,2 +1,2 @@
 # InteractiveProgramming
-This is the base repo for the interactive programming project for Software Design, Spring 2016 at Olin College.
+To operate space-time travel machinery, download trip_through_space_BACKUP1.py, hold down the CONTROL key, tap your toes three times, and press the B key.
